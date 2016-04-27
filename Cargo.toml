@@ -1,0 +1,9 @@
+[package]
+name = "simpleirc"
+version = "0.1.0"
+authors = ["Filip Szczepański <jazz2rulez@gmail.com>"]
+
+[dependencies]
+irc = "0.11.3"
+termbox = "0.1.0"
+termbox-sys = "0.2.9"
