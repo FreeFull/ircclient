@@ -27,8 +27,9 @@ impl DisplayArea {
 
     pub fn display_string(&self, termbox: &mut Termbox, string: &str) {
         // TODO: display message properly
-        shift_up(termbox);
-        let h = termbox.height();
-        termbox.put_str(0, h-2, string, WHITE, BLACK);
+        let width = termbox.width();
+        let height = termbox.height();
+        shift_up(termbox, 0, 0, width as usize, height as usize - 1, 1);
+        termbox.put_str(0, height-2, string, WHITE, BLACK);
     }
 }

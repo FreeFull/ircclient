@@ -81,27 +81,34 @@ impl Tui {
     }
 }
 
-fn shift_up(termbox: &mut Termbox) {
+fn shift_up(termbox: &mut Termbox, x: usize, y: usize, w: usize, h: usize, n: usize) {
     let width = termbox.width() as usize;
-    let height = termbox.height() as usize;
     {
         let output_buffer = termbox.cell_buffer_mut();
-        for i in 0..(width * (height-2)) {
-            output_buffer[i] = output_buffer[i+width];
+        for line in (y+n)..(y+h) {
+            let start = line*width + x;
+            for cell in start..(start+w) {
+                output_buffer[cell-width*n] = output_buffer[cell];
+            }
         }
     }
-    clear_line(termbox, height-2);
+    clear_area(termbox, x, y + h - n, w, n);
+}
+
+fn clear_area(termbox: &mut Termbox, x: usize, y: usize, w: usize, h: usize) {
+    let width = termbox.width() as usize;
+    assert!(x + w <= width);
+    let output_buffer = termbox.cell_buffer_mut();
+    const EMPTY_CELL: ::termbox::Cell = termbox_sys::RawCell { ch: 0, bg: BLACK, fg: WHITE };
+    for line in y..(y+h) {
+        let start = line*width + x;
+        for cell in start..(start+w) {
+            output_buffer[cell] = EMPTY_CELL;
+        }
+    }
 }
 
 fn clear_line(termbox: &mut Termbox, line: usize) {
     let width = termbox.width() as usize;
-    let output_buffer = termbox.cell_buffer_mut();
-    for i in (width * line)..(width * (line+1)) {
-        output_buffer[i] =
-            termbox_sys::RawCell {
-                ch: ' ' as u32,
-                bg: BLACK,
-                fg: WHITE,
-            };
-    }
+    clear_area(termbox, 0, line, width, 1);
 }
