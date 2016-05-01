@@ -11,7 +11,7 @@ impl DisplayArea {
         let mut w = 0;
         let mut h = 0;
         getmaxyx(stdscr, &mut h, &mut w);
-        let window = subwin(stdscr, h - 2, w, 0, 0);
+        let window = subwin(stdscr, h - 1, w, 0, 0);
         scrollok(window, true);
         syncok(window, true);
         DisplayArea {
@@ -28,7 +28,9 @@ impl DisplayArea {
             NICK(ref nick) => format!("{} is now known as {}", from, nick),
             _ => return,
         };
+        if getcury(self.window) != 0 {
+            waddch(self.window, '\n' as u64);
+        }
         waddstr(self.window, &message);
-        waddch(self.window, '\n' as u64);
     }
 }
