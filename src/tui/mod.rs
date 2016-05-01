@@ -65,7 +65,6 @@ impl Tui {
                 }
             }
             self.entry_line.draw();
-//            touchwin(stdscr);
             refresh();
         }
     }
