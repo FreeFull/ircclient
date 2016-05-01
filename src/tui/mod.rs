@@ -71,7 +71,7 @@ impl Tui {
 
     fn chat_target(&self) -> &str {
         // TODO: Don't just hardcode the channel!
-        "#clienttest"
+        self.server.config().channels.as_ref().and_then(|x| x.first()).map(|x| &**x).unwrap_or("")
     }
 
     fn handle_line(&mut self, line: String) {
