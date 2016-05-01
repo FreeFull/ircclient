@@ -1,6 +1,5 @@
 extern crate irc;
-extern crate termbox;
-extern crate termbox_sys;
+extern crate ncurses;
 
 use std::thread;
 use std::sync::mpsc::channel;
