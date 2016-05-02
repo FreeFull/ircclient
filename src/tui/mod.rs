@@ -29,6 +29,7 @@ impl Drop for Tui {
 
 impl Tui {
     pub fn new(message_rx: MessageReceiver, server: IrcServer) -> Tui {
+        setlocale(LcCategory::all, "");
         initscr();
         keypad(stdscr, true);
         raw();
