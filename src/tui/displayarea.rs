@@ -28,7 +28,7 @@ impl DisplayArea {
             NICK(ref nick) => format!("{} is now known as {}", from, nick),
             _ => return,
         };
-        if getcury(self.window) != 0 {
+        if (getcury(self.window), getcurx(self.window)) != (0, 0) {
             waddch(self.window, '\n' as u64);
         }
         waddstr(self.window, &message);
