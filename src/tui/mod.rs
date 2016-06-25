@@ -98,7 +98,10 @@ impl Tui {
                     self.server.send(Command::PART(String::from(name), Some(String::from(body)))).unwrap();
                 }
             },
-            "quit" => self.server.send_quit(body).unwrap(),
+            "quit" => {
+                self.server.send_quit(body).unwrap();
+                self.running = false;
+            },
             "win" | "w" => {
                 if let Some(number) = body.parse::<usize>().ok() {
                     self.windows.change_to(number);
