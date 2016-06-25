@@ -13,8 +13,7 @@ impl EntryLine {
         let mut w = 0;
         let mut h = 0;
         getmaxyx(stdscr, &mut h, &mut w);
-        let window = subwin(stdscr, 1, w, h - 1, 0);
-        syncok(window, true);
+        let window = newwin(1, w, h - 1, 0);
         EntryLine {
             window: window,
             string: String::new(),
@@ -52,5 +51,6 @@ impl EntryLine {
         werase(self.window);
         waddstr(self.window, &self.string);
         wcursyncup(self.window);
+        wnoutrefresh(self.window);
     }
 }

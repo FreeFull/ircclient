@@ -7,9 +7,8 @@ use std::sync::mpsc::channel;
 use irc::client::prelude::*;
 
 mod tui;
+mod irc_utils;
 use tui::Tui;
-
-mod irc_state;
 
 fn main() {
     let server = IrcServer::new("config.json").unwrap();

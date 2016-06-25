@@ -6,20 +6,25 @@ pub struct DisplayArea {
     window: WINDOW,
 }
 
+impl Drop for DisplayArea {
+    fn drop(&mut self) {
+        delwin(self.window);
+    }
+}
+
 impl DisplayArea {
     pub fn new() -> DisplayArea {
         let mut w = 0;
         let mut h = 0;
         getmaxyx(stdscr, &mut h, &mut w);
-        let window = subwin(stdscr, h - 1, w, 0, 0);
+        let window = newwin(h - 2, w, 0, 0);
         scrollok(window, true);
-        syncok(window, true);
         DisplayArea {
             window: window,
         }
     }
 
-    pub fn display_message(&self, message: Message) {
+    pub fn add_message(&self, message: Message) {
         use irc::client::data::Command::*;
         let from = message.source_nickname().unwrap_or("");
         let message = match message.command {
@@ -32,5 +37,9 @@ impl DisplayArea {
             waddch(self.window, '\n' as u64);
         }
         waddstr(self.window, &message);
+    }
+
+    pub fn draw(&self) {
+        wnoutrefresh(self.window);
     }
 }
