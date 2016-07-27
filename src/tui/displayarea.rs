@@ -1,6 +1,6 @@
 use ncurses::*;
 
-use irc::client::prelude::*;
+use event::ChatEvent;
 
 pub struct DisplayArea {
     window: WINDOW,
@@ -24,14 +24,13 @@ impl DisplayArea {
         }
     }
 
-    pub fn add_message(&self, message: Message) {
-        use irc::client::data::Command::*;
-        let from = message.source_nickname().unwrap_or("");
-        let message = match message.command {
-            PRIVMSG(ref target, ref msg) => format!("{} <{}> {}", target, from, msg),
-            JOIN(ref chanlist, _, _) => format!("{} has joined {}", from, chanlist),
-            NICK(ref nick) => format!("{} is now known as {}", from, nick),
-            _ => return,
+    pub fn show_event(&self, event: ChatEvent) {
+        use event::ChatEventKind::*;
+        let from = event.source_nickname().unwrap_or("");
+        let message = match event.event {
+            RoomMsg(ref room, ref msg) => format!("{} <{}> {}", room, from, msg),
+            Join(ref channel) => format!("{} has joined {}", from, channel),
+            NickChange(ref new_nick) => format!("{} is now known as {}", from, new_nick),
         };
         if (getcury(self.window), getcurx(self.window)) != (0, 0) {
             waddch(self.window, '\n' as u64);

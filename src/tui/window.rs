@@ -1,27 +1,70 @@
 use super::displayarea::DisplayArea;
-use irc_utils::irc_equal;
-use irc::client::prelude::*;
 
-enum WindowKind {
-    Channel,
-    Query,
+use event;
+
+enum WindowId {
+    Channel {
+        id: i32,
+        name: String,
+        server: ServerId
+    },
+    Query {
+        id: i32,
+        name: String,
+    },
     Status,
+}
+
+impl WindowId {
+    fn name(&self) -> Option<&str> {
+        use self::WindowId::*;
+        match *self {
+            Channel { ref name, .. } => Some(name),
+            Query { ref name, .. } => Some(name),
+            Status => None
+        }
+    }
+}
+
+impl PartialEq for WindowId {
+    fn eq(&self, rhs: &WindowId) -> bool {
+        use self::WindowId::*;
+        match (self, rhs) {
+            (&Channel { id: id_a, server: ref server_a, .. }, &Channel { id: id_b, server: ref server_b, .. }) =>
+                id_a == id_b && server_a == server_b,
+            (&Query { id: id_a, .. }, &Query { id: id_b, .. }) => id_a == id_b,
+            (&Status, &Status) => true,
+            (_, _) => false,
+        }
+    }
+}
+
+pub struct ChannelId {
+    pub id: i32,
+    pub server_id: ServerId,
+}
+
+pub struct ServerId {
+    pub id: i32,
+    pub name: String,
+}
+
+impl PartialEq for ServerId {
+    fn eq(&self, rhs: &ServerId) -> bool {
+        self.id == rhs.id
+    }
 }
 
 pub struct Window {
     display: DisplayArea,
-    name: String,
-    kind: WindowKind,
+    id: WindowId,
 }
 
 impl Window {
-    fn new<S>(name: S, kind: WindowKind) -> Window
-    where S: Into<String>
-    {
+    fn new(id: WindowId) -> Window {
         Window {
             display: DisplayArea::new(),
-            name: name.into(),
-            kind: kind,
+            id: id,
         }
     }
 
@@ -30,7 +73,7 @@ impl Window {
     }
 
     pub fn name(&self) -> &str {
-        &self.name
+        self.id.name().unwrap_or("Status")
     }
 }
 
@@ -43,16 +86,14 @@ pub struct Windows {
     status: Window,
     windows: Vec<Window>,
     current_window: CurrentWindow,
-    server: IrcServer,
 }
 
 impl Windows {
-    pub fn new(server: IrcServer) -> Windows {
+    pub fn new() -> Windows {
         Windows {
-            status: Window::new("*status*", WindowKind::Status),
+            status: Window::new(WindowId::Status),
             windows: Vec::new(),
             current_window: CurrentWindow::Status,
-            server: server,
         }
     }
 
@@ -71,27 +112,18 @@ impl Windows {
         }
     }
 
-    pub fn current_channel(&self) -> Option<&str> {
-        let window = self.current_window();
-        if let WindowKind::Channel = window.kind {
-            Some(window.name())
-        } else {
-            None
-        }
-    }
-
     pub fn draw(&self) {
         self.current_window().draw();
     }
 
-    pub fn join(&mut self, chanlist: &str) {
+    pub fn join(&mut self, id: WindowId) {
         for (i, win) in self.windows.iter().enumerate() {
-            if irc_equal(&win.name, chanlist) {
+            if win.id == id {
                 self.current_window = CurrentWindow::Other(i);
                 return;
             }
         }
-        self.windows.push(Window::new(chanlist, WindowKind::Channel));
+        self.windows.push(Window::new(id));
     }
 
     pub fn close_current(&mut self) {
@@ -107,10 +139,6 @@ impl Windows {
         self.current_window = C::Status;
     }
 
-    pub fn part(&mut self, chanlist: &str) {
-        self.windows.retain(|x| !irc_equal(&x.name, chanlist));
-    }
-
     pub fn change_to(&mut self, i: usize) {
         if i == 0 {
             self.current_window = CurrentWindow::Status;
@@ -119,34 +147,7 @@ impl Windows {
         }
     }
 
-    pub fn handle_message(&mut self, message: Message) {
-        let source_nickname = message.source_nickname().unwrap_or("");
-        use irc::client::data::Command::*;
-        match message.command {
-            PRIVMSG(ref target, ref message) => {
-            }
-            NOTICE(ref target, ref message) => {
-            }
-            NICK(ref newname) => {
-            }
-            // https://tools.ietf.org/html/rfc2812#section-3.2.1
-            // Depends on server not sending a list of channels.
-            JOIN(ref chanlist, _, _) => {
-                if source_nickname == self.server.current_nickname() {
-                    self.join(chanlist);
-                } else {
-                }
-            }
-            PART(ref chanlist, ref message) => {
-                if source_nickname == self.server.current_nickname() {
-                    self.part(chanlist);
-                } else {
-                }
-            }
-            QUIT(ref message) => {
-            }
-            Response(ref response, ref arguments, ref suffix) => {}
-            _ => {}
-        }
+    pub fn handle_event(&mut self, event: event::Event) {
+        unimplemented!();
     }
 }

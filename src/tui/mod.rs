@@ -3,22 +3,21 @@ mod displayarea;
 mod window;
 
 use std;
-use std::sync::mpsc::Receiver;
+use std::sync::mpsc::{Sender, Receiver};
 
 use ncurses::*;
-
-use irc::client::prelude::*;
 
 use self::entryline::EntryLine;
 use self::displayarea::DisplayArea;
 use self::window::{Windows, Window};
 
-pub type MessageReceiver = Receiver<std::io::Result<Message>>;
+use event::Event;
+use irc;
 
 pub struct Tui {
     entry_line: EntryLine,
-    message_rx: MessageReceiver,
-    server: IrcServer,
+    event_rx: Receiver<Event>,
+    irc_tx: irc::Sender,
     windows: Windows,
     running: bool,
 }
@@ -30,7 +29,7 @@ impl Drop for Tui {
 }
 
 impl Tui {
-    pub fn new(message_rx: MessageReceiver, server: IrcServer) -> Tui {
+    pub fn new(event_rx: Receiver<Event>, irc_tx: irc::Sender) -> Tui {
         setlocale(LcCategory::all, "");
         initscr();
         keypad(stdscr, true);
@@ -42,9 +41,9 @@ impl Tui {
         let entry_line = EntryLine::new();
         Tui {
             entry_line: entry_line,
-            message_rx: message_rx,
-            server: server.clone(),
-            windows: Windows::new(server),
+            event_rx: event_rx,
+            irc_tx: irc_tx,
+            windows: Windows::new(),
             running: true,
         }
     }
@@ -60,8 +59,8 @@ impl Tui {
             if !self.running { break; }
             loop {
                 use std::sync::mpsc::TryRecvError::*;
-                match self.message_rx.try_recv() {
-                    Ok(message) => self.windows.handle_message(message.unwrap()),
+                match self.event_rx.try_recv() {
+                    Ok(event) => self.windows.handle_event(event),
                     Err(Empty) => break,
                     Err(Disconnected) => break 'main_loop,
                 }
@@ -84,7 +83,7 @@ impl Tui {
             return;
         }
         if let Some(target) = self.windows.current_target() {
-            self.server.send_privmsg(target.name(), &line);
+            unimplemented!();
         } else {
             // TODO: Show error
         }
@@ -92,14 +91,14 @@ impl Tui {
 
     fn handle_command(&mut self, command: &str, body: &str) {
         match command {
-            "join" => self.server.send_join(body).unwrap(),
+            "join" => unimplemented!(),
             "part" => {
-                if let Some(name) = self.windows.current_channel() {
-                    self.server.send(Command::PART(String::from(name), Some(String::from(body)))).unwrap();
+                if unimplemented!() {
+                    unimplemented!();
                 }
             },
             "quit" => {
-                self.server.send_quit(body).unwrap();
+                self.irc_tx.send(unimplemented!()).unwrap();
                 self.running = false;
             },
             "win" | "w" => {
