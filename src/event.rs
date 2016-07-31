@@ -1,7 +1,3 @@
-pub struct Event {
-    // TODO
-}
-
 pub struct ChatEvent {
     source_nickname: Option<String>,
     pub event: ChatEventKind,

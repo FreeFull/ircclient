@@ -2,7 +2,8 @@ use super::displayarea::DisplayArea;
 
 use event;
 
-enum WindowId {
+#[derive(Clone)]
+pub enum WindowId {
     Channel {
         id: i32,
         name: String,
@@ -39,11 +40,7 @@ impl PartialEq for WindowId {
     }
 }
 
-pub struct ChannelId {
-    pub id: i32,
-    pub server_id: ServerId,
-}
-
+#[derive(Clone)]
 pub struct ServerId {
     pub id: i32,
     pub name: String,
@@ -74,6 +71,10 @@ impl Window {
 
     pub fn name(&self) -> &str {
         self.id.name().unwrap_or("Status")
+    }
+
+    pub fn id(&self) -> &WindowId {
+        &self.id
     }
 }
 
@@ -147,7 +148,7 @@ impl Windows {
         }
     }
 
-    pub fn handle_event(&mut self, event: event::Event) {
+    pub fn handle_event(&mut self, event: event::ChatEvent) {
         unimplemented!();
     }
 }

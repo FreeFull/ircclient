@@ -1,17 +1,24 @@
-use std::sync::mpsc as chan;
-use event::Event;
+use std::sync::mpsc::*;
+use event::ChatEvent;
+use std::collections::HashMap;
 use irc_lib::client::prelude::*;
 
 pub mod irc_utils;
-mod command;
+pub mod command;
 
-// TODO
-pub type Sender = chan::Sender<()>;
+struct IrcState {
+    channels: HashMap<Vec<u8>, Channel>,
+}
 
-pub fn start(event_tx: chan::Sender<Event>, irc_rx: chan::Receiver<()>) {
+struct Channel {
+    name: String,
+    users: Vec<String>,
+}
+
+pub fn start(event_tx: Sender<ChatEvent>, irc_rx: Receiver<command::Command>) {
     let server = IrcServer::new("config.json").unwrap();
     server.identify().unwrap();
     for message in server.iter() {
-        // TODO
+        unimplemented!();
     }
 }

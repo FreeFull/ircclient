@@ -1,6 +1,6 @@
 mod entryline;
 mod displayarea;
-mod window;
+pub mod window;
 
 use std;
 use std::sync::mpsc::{Sender, Receiver};
@@ -11,13 +11,14 @@ use self::entryline::EntryLine;
 use self::displayarea::DisplayArea;
 use self::window::{Windows, Window};
 
-use event::Event;
+use event::ChatEvent;
 use irc;
+use irc::command::Command;
 
 pub struct Tui {
     entry_line: EntryLine,
-    event_rx: Receiver<Event>,
-    irc_tx: irc::Sender,
+    event_rx: Receiver<ChatEvent>,
+    irc_tx: Sender<Command>,
     windows: Windows,
     running: bool,
 }
@@ -29,7 +30,7 @@ impl Drop for Tui {
 }
 
 impl Tui {
-    pub fn new(event_rx: Receiver<Event>, irc_tx: irc::Sender) -> Tui {
+    pub fn new(event_rx: Receiver<ChatEvent>, irc_tx: Sender<Command>) -> Tui {
         setlocale(LcCategory::all, "");
         initscr();
         keypad(stdscr, true);
@@ -91,12 +92,11 @@ impl Tui {
 
     fn handle_command(&mut self, command: &str, body: &str) {
         match command {
-            "join" => unimplemented!(),
+            "join" => self.irc_tx.send(Command::Join(String::from(body))).unwrap(),
             "part" => {
-                if unimplemented!() {
-                    unimplemented!();
-                }
-            },
+                let id = self.windows.current_window().id().clone();
+                self.irc_tx.send(Command::Part(id)).unwrap();
+            }
             "quit" => {
                 self.irc_tx.send(unimplemented!()).unwrap();
                 self.running = false;
