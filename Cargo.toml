@@ -5,6 +5,7 @@ authors = ["Filip Szczepański <jazz2rulez@gmail.com>"]
 
 [dependencies]
 irc = "0.11.3"
+chrono = "0.2"
 
 [dependencies.ncurses]
 git = "https://github.com/jeaye/ncurses-rs"

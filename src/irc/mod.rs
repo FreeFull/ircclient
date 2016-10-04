@@ -57,10 +57,8 @@ pub fn start(event_tx: Sender<ChatEvent>) -> Result<(ServerHandles, Sender<comma
                     server.send_privmsg(&target, &message).unwrap();
                 }
                 MessageReceived(message) => {
-                    let event = ChatEvent {
-                        about_self: Some(server.current_nickname()) == message.source_nickname(),
-                        message: message
-                    };
+                    let about_self = Some(server.current_nickname()) == message.source_nickname();
+                    let event = ChatEvent::new(message, about_self);
                     event_tx.send(event).unwrap();
                 }
             }
