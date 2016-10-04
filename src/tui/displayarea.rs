@@ -33,10 +33,19 @@ impl DisplayArea {
             NICK(ref new_nick) => format!("{} is now known as {}", from, new_nick),
             _ => return,
         };
+        self.add_str(&message);
+    }
+
+    fn add_str(&self, message: &str) {
         if (getcury(self.window), getcurx(self.window)) != (0, 0) {
             waddch(self.window, '\n' as u64);
         }
         waddstr(self.window, &message);
+    }
+
+    pub fn self_message(&self, message: &str) {
+        self.add_str("<> ");
+        waddstr(self.window, message);
     }
 
     pub fn draw(&self) {

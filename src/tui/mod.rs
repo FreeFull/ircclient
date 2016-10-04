@@ -80,8 +80,10 @@ impl Tui {
             self.handle_command(command, body);
             return;
         }
-        if let Some(target) = self.windows.current_target().and_then(|x| x.id().name()) {
-            self.irc_tx.send(Command::PrivMsg(String::from(target), line)).unwrap();
+        if let Some(target) = self.windows.current_target() {
+            target.self_message(&line);
+            let target = String::from(target.id().name().expect("tui::handle_line target not found"));
+            self.irc_tx.send(Command::PrivMsg(target, line)).unwrap();
         } else {
             // TODO: Show error
         }

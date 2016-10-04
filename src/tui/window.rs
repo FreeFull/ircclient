@@ -60,6 +60,10 @@ impl Window {
     pub fn id(&self) -> &WindowId {
         &self.id
     }
+
+    pub fn self_message(&self, message: &str) {
+        self.display.self_message(message);
+    }
 }
 
 enum CurrentWindow {
