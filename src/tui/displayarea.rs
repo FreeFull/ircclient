@@ -24,13 +24,14 @@ impl DisplayArea {
         }
     }
 
-    pub fn show_event(&self, event: ChatEvent) {
-        use event::ChatEventKind::*;
+    pub fn show_event(&self, event: &ChatEvent) {
+        use irc_lib::client::data::Command::*;
         let from = event.source_nickname().unwrap_or("");
-        let message = match event.event {
-            RoomMsg(ref room, ref msg) => format!("{} <{}> {}", room, from, msg),
-            Join(ref channel) => format!("{} has joined {}", from, channel),
-            NickChange(ref new_nick) => format!("{} is now known as {}", from, new_nick),
+        let message = match event.message.command {
+            PRIVMSG(ref target, ref msg) => format!("{} <{}> {}", target, from, msg),
+            JOIN(ref channel, _, _) => format!("{} has joined {}", from, channel),
+            NICK(ref new_nick) => format!("{} is now known as {}", from, new_nick),
+            _ => return,
         };
         if (getcury(self.window), getcurx(self.window)) != (0, 0) {
             waddch(self.window, '\n' as u64);

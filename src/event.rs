@@ -1,16 +1,12 @@
+use irc_lib::client::data::Message;
+
 pub struct ChatEvent {
-    source_nickname: Option<String>,
-    pub event: ChatEventKind,
+    pub about_self: bool,
+    pub message: Message,
 }
 
 impl ChatEvent {
     pub fn source_nickname(&self) -> Option<&str> {
-        self.source_nickname.as_ref().map(|x| &**x)
+        self.message.source_nickname()
     }
-}
-
-pub enum ChatEventKind {
-    RoomMsg(String, String),
-    Join(String),
-    NickChange(String),
 }

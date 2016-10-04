@@ -1,7 +1,6 @@
 extern crate irc as irc_lib;
 extern crate ncurses;
 
-use std::thread;
 use std::sync::mpsc::channel;
 
 mod tui;
@@ -11,14 +10,7 @@ use tui::Tui;
 
 fn main() {
     let (event_tx, event_rx) = channel();
-    let (irc_tx, irc_rx) = channel();
-    let irc_thread = thread::spawn({
-        move || {
-            irc::start(event_tx, irc_rx);
-        }
-    });
+    let (_irc_threads, irc_tx) = irc::start(event_tx).unwrap();
     let mut tui = Tui::new(event_rx, irc_tx);
     tui.event_loop();
-    drop(tui);
-    irc_thread.join().unwrap();
 }

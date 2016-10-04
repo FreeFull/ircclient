@@ -5,19 +5,16 @@ use event;
 #[derive(Clone)]
 pub enum WindowId {
     Channel {
-        id: i32,
         name: String,
-        server: ServerId
     },
     Query {
-        id: i32,
         name: String,
     },
     Status,
 }
 
 impl WindowId {
-    fn name(&self) -> Option<&str> {
+    pub fn name(&self) -> Option<&str> {
         use self::WindowId::*;
         match *self {
             Channel { ref name, .. } => Some(name),
@@ -31,24 +28,11 @@ impl PartialEq for WindowId {
     fn eq(&self, rhs: &WindowId) -> bool {
         use self::WindowId::*;
         match (self, rhs) {
-            (&Channel { id: id_a, server: ref server_a, .. }, &Channel { id: id_b, server: ref server_b, .. }) =>
-                id_a == id_b && server_a == server_b,
-            (&Query { id: id_a, .. }, &Query { id: id_b, .. }) => id_a == id_b,
+            (&Channel { name: ref name_a, .. }, &Channel { name: ref name_b, .. }) => name_a == name_b,
+            (&Query { name: ref name_a, .. }, &Query { name: ref name_b, .. }) => name_a == name_b,
             (&Status, &Status) => true,
             (_, _) => false,
         }
-    }
-}
-
-#[derive(Clone)]
-pub struct ServerId {
-    pub id: i32,
-    pub name: String,
-}
-
-impl PartialEq for ServerId {
-    fn eq(&self, rhs: &ServerId) -> bool {
-        self.id == rhs.id
     }
 }
 
@@ -117,16 +101,6 @@ impl Windows {
         self.current_window().draw();
     }
 
-    pub fn join(&mut self, id: WindowId) {
-        for (i, win) in self.windows.iter().enumerate() {
-            if win.id == id {
-                self.current_window = CurrentWindow::Other(i);
-                return;
-            }
-        }
-        self.windows.push(Window::new(id));
-    }
-
     pub fn close_current(&mut self) {
         use self::CurrentWindow as C;
         match self.current_window {
@@ -149,6 +123,36 @@ impl Windows {
     }
 
     pub fn handle_event(&mut self, event: event::ChatEvent) {
-        unimplemented!();
+        use irc_lib::client::data::Command::*;
+        match event.message.command {
+            PRIVMSG(..) => {
+                // TODO: Proper implementation
+                self.current_window().display.show_event(&event);
+            }
+            JOIN(ref channel, _, _) => {
+                let window = self.join(channel);
+                window.display.show_event(&event);
+            }
+            _ => {}
+        }
+    }
+
+    fn get_index_by_name(&self, name: &str) -> Option<usize> {
+        for (i, window) in self.windows.iter().enumerate() {
+            if window.id().name() == Some(name) {
+                return Some(i)
+            }
+        }
+        None
+    }
+
+    fn join(&mut self, channel: &str) -> &Window {
+       if let Some(i) = self.get_index_by_name(channel) {
+           return &self.windows[i];
+       }
+       self.windows.push(Window::new(WindowId::Channel { name: String::from(channel) }));
+       let len = self.windows.len();
+       self.change_to(len);
+       self.current_window()
     }
 }

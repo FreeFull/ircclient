@@ -2,17 +2,14 @@ mod entryline;
 mod displayarea;
 pub mod window;
 
-use std;
 use std::sync::mpsc::{Sender, Receiver};
 
 use ncurses::*;
 
 use self::entryline::EntryLine;
-use self::displayarea::DisplayArea;
-use self::window::{Windows, Window};
+use self::window::Windows;
 
 use event::ChatEvent;
-use irc;
 use irc::command::Command;
 
 pub struct Tui {
@@ -83,8 +80,8 @@ impl Tui {
             self.handle_command(command, body);
             return;
         }
-        if let Some(target) = self.windows.current_target() {
-            unimplemented!();
+        if let Some(target) = self.windows.current_target().and_then(|x| x.id().name()) {
+            self.irc_tx.send(Command::PrivMsg(String::from(target), line)).unwrap();
         } else {
             // TODO: Show error
         }
@@ -94,8 +91,14 @@ impl Tui {
         match command {
             "join" => self.irc_tx.send(Command::Join(String::from(body))).unwrap(),
             "part" => {
-                let id = self.windows.current_window().id().clone();
-                self.irc_tx.send(Command::Part(id)).unwrap();
+                use self::window::WindowId::*;
+                let channel = match *self.windows.current_window().id() {
+                    Channel { ref name, .. } => Some(name),
+                    _ => None,
+                };
+                if let Some(channel) = channel {
+                    self.irc_tx.send(Command::Part(channel.clone(), Some(String::from(body)))).unwrap();
+                }
             }
             "quit" => {
                 self.irc_tx.send(unimplemented!()).unwrap();
