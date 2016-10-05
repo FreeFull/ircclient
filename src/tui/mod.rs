@@ -83,7 +83,7 @@ impl Tui {
         if let Some(target) = self.windows.current_target() {
             target.self_message(&line);
             let target = String::from(target.id().name().expect("tui::handle_line target not found"));
-            self.irc_tx.send(Command::PrivMsg(target, line)).unwrap();
+            self.irc_tx.send(Command::PrivMsg { target: target, message: line }).unwrap();
         } else {
             // TODO: Show error
         }
@@ -91,7 +91,7 @@ impl Tui {
 
     fn handle_command(&mut self, command: &str, body: &str) {
         match command {
-            "join" => self.irc_tx.send(Command::Join(String::from(body))).unwrap(),
+            "join" => self.irc_tx.send(Command::Join { channel: String::from(body) }).unwrap(),
             "part" => {
                 use self::window::WindowId::*;
                 let channel = match *self.windows.current_window().id() {
@@ -99,7 +99,7 @@ impl Tui {
                     _ => None,
                 };
                 if let Some(channel) = channel {
-                    self.irc_tx.send(Command::Part(channel.clone(), Some(String::from(body)))).unwrap();
+                    self.irc_tx.send(Command::Part { channel: channel.clone(), message: Some(String::from(body)) }).unwrap();
                 }
             }
             "quit" => {

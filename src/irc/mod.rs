@@ -47,13 +47,13 @@ pub fn start(event_tx: Sender<ChatEvent>) -> Result<(ServerHandles, Sender<comma
         for event in irc_rx {
             use self::command::Command::*;
             match event {
-                Join(channel) => {
+                Join { channel } => {
                     server.send_join(&channel).unwrap();
                 }
-                Part(channel, message) => {
+                Part { channel, message } => {
                     server.send(Command::PART(channel, message)).unwrap();
                 }
-                PrivMsg(target, message) => {
+                PrivMsg { target, message } => {
                     server.send_privmsg(&target, &message).unwrap();
                 }
                 MessageReceived(message) => {
