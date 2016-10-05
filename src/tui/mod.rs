@@ -74,7 +74,7 @@ impl Tui {
             return;
         }
         if line.chars().nth(0) == Some('/') {
-            let mut line = line[1..].splitn(1, ' ');
+            let mut line = line[1..].splitn(2, ' ');
             let command = line.next().unwrap_or("");
             let body = line.next().unwrap_or("");
             self.handle_command(command, body);
