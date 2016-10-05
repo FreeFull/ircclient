@@ -90,8 +90,6 @@ impl Tui {
     }
 
     fn handle_command(&mut self, command: &str, body: &str) {
-        print_stderr(command);
-        print_stderr(body);
         let maybe_body = if body == "" { None } else { Some(body) };
         match command {
             "join" => self.irc_tx.send(Command::Join { channel: String::from(body) }).unwrap(),
