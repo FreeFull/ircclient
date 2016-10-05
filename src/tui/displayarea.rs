@@ -51,4 +51,8 @@ impl DisplayArea {
     pub fn draw(&self) {
         wnoutrefresh(self.window);
     }
+
+    pub fn redraw(&self) {
+        redrawwin(self.window);
+    }
 }

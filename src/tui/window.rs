@@ -53,6 +53,10 @@ impl Window {
         self.display.draw();
     }
 
+    fn redraw(&self) {
+        self.display.redraw();
+    }
+
     pub fn name(&self) -> &str {
         self.id.name().unwrap_or("Status")
     }
@@ -124,6 +128,7 @@ impl Windows {
         } else if i <= self.windows.len() {
             self.current_window = CurrentWindow::Other(i-1);
         }
+        self.current_window().redraw();
     }
 
     pub fn handle_event(&mut self, event: event::ChatEvent) {
