@@ -31,12 +31,12 @@ impl DisplayArea {
             PRIVMSG(ref target, ref msg) => format!("{} <{}> {}", target, from, msg),
             JOIN(ref channel, _, _) => format!("{} has joined {}", from, channel),
             NICK(ref new_nick) => format!("{} is now known as {}", from, new_nick),
-            _ => return,
+            _ => format!("{}", event.message),
         };
         self.add_str(&message);
     }
 
-    fn add_str(&self, message: &str) {
+    pub fn add_str(&self, message: &str) {
         if (getcury(self.window), getcurx(self.window)) != (0, 0) {
             waddch(self.window, '\n' as u64);
         }

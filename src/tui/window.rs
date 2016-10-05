@@ -68,6 +68,10 @@ impl Window {
     pub fn self_message(&self, message: &str) {
         self.display.self_message(message);
     }
+
+    pub fn show_event(&self, event: &event::ChatEvent) {
+        self.display.show_event(event);
+    }
 }
 
 enum CurrentWindow {
@@ -134,15 +138,29 @@ impl Windows {
     pub fn handle_event(&mut self, event: event::ChatEvent) {
         use irc_lib::client::data::Command::*;
         match event.message.command {
-            PRIVMSG(..) => {
-                // TODO: Proper implementation
-                self.current_window().display.show_event(&event);
+            PRIVMSG(ref target, ref _message) => {
+                let window_index;
+                if event.is_query {
+                    let source = event.message.source_nickname().unwrap_or("Unknown nick");
+                    window_index = self.open(source, true);
+                } else {
+                    window_index = self.open(target, false);
+                }
+                let window = &self.windows[window_index];
+                window.show_event(&event);
             }
             JOIN(ref channel, _, _) => {
-                let window = self.join(channel);
-                window.display.show_event(&event);
+                let window_index = self.open(channel, false);
+                if event.about_self {
+                    let len = self.windows.len();
+                    self.change_to(len);
+                }
+                let window = &self.windows[window_index];
+                window.show_event(&event);
             }
-            _ => {}
+            _ => {
+                self.status.show_event(&event);
+            }
         }
     }
 
@@ -155,13 +173,22 @@ impl Windows {
         None
     }
 
-    fn join(&mut self, channel: &str) -> &Window {
-       if let Some(i) = self.get_index_by_name(channel) {
-           return &self.windows[i];
-       }
-       self.windows.push(Window::new(WindowId::Channel { name: String::from(channel) }));
-       let len = self.windows.len();
-       self.change_to(len);
-       self.current_window()
+    // Has to return an index.
+    // Returning &Window would cause the mutable borrow to persist.
+    fn open(&mut self, name: &str, is_query: bool) -> usize {
+        if let Some(i) = self.get_index_by_name(name) {
+             return i;
+        }
+        let name_owned = String::from(name);
+        let window;
+        if is_query {
+            window = Window::new(WindowId::Query { name: name_owned });
+        } else {
+            window = Window::new(WindowId::Channel { name: name_owned });
+        }
+        window.display.add_str(name);
+        self.windows.push(window);
+        let len = self.windows.len();
+        len - 1
     }
 }
