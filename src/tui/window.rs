@@ -151,10 +151,6 @@ impl Windows {
             }
             JOIN(ref channel, _, _) => {
                 let window_index = self.open(channel, false);
-                if event.about_self {
-                    let len = self.windows.len();
-                    self.change_to(len);
-                }
                 let window = &self.windows[window_index];
                 window.show_event(&event);
             }
@@ -189,6 +185,7 @@ impl Windows {
         window.display.add_str(name);
         self.windows.push(window);
         let len = self.windows.len();
+        self.change_to(len);
         len - 1
     }
 }
