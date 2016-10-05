@@ -34,7 +34,9 @@ pub fn start(event_tx: Sender<ChatEvent>) -> Result<(ServerHandles, Sender<comma
         move || {
             for message in server.iter() {
                 let message = message.unwrap();
-                irc_tx.send(command::Command::MessageReceived(message)).unwrap();
+                if irc_tx.send(command::Command::MessageReceived(message)).is_err() {
+                    break;
+                }
             }
         }
     };
@@ -55,6 +57,11 @@ pub fn start(event_tx: Sender<ChatEvent>) -> Result<(ServerHandles, Sender<comma
                 }
                 PrivMsg { target, message } => {
                     server.send_privmsg(&target, &message).unwrap();
+                }
+                Quit { message } => {
+                    let message = message.as_ref().map(|x| &x[..]).unwrap_or("");
+                    server.send_quit(message).unwrap();
+                    break;
                 }
                 MessageReceived(message) => {
                     let about_self = Some(server.current_nickname()) == message.source_nickname();

@@ -90,6 +90,9 @@ impl Tui {
     }
 
     fn handle_command(&mut self, command: &str, body: &str) {
+        print_stderr(command);
+        print_stderr(body);
+        let maybe_body = if body == "" { None } else { Some(body) };
         match command {
             "join" => self.irc_tx.send(Command::Join { channel: String::from(body) }).unwrap(),
             "part" => {
@@ -99,11 +102,15 @@ impl Tui {
                     _ => None,
                 };
                 if let Some(channel) = channel {
-                    self.irc_tx.send(Command::Part { channel: channel.clone(), message: Some(String::from(body)) }).unwrap();
+                    self.irc_tx.send(
+                        Command::Part {
+                            channel: channel.clone(),
+                            message: maybe_body.map(String::from)
+                        }).unwrap();
                 }
             }
             "quit" => {
-                self.irc_tx.send(unimplemented!()).unwrap();
+                self.irc_tx.send(Command::Quit { message: maybe_body.map(String::from) }).unwrap();
                 self.running = false;
             },
             "win" | "w" => {

@@ -12,5 +12,8 @@ pub enum Command {
         target: String,
         message: String,
     },
+    Quit {
+        message: Option<String>,
+    },
     MessageReceived(Message),
 }
