@@ -101,6 +101,17 @@ impl Windows {
         }
     }
 
+    pub fn current_window_number(&self) -> usize {
+        match self.current_window {
+            CurrentWindow::Status => 0,
+            CurrentWindow::Other(i) => i + 1,
+        }
+    }
+
+    pub fn highest_window_index(&self) -> usize {
+        self.windows.len()
+    }
+
     pub fn current_target(&self) -> Option<&Window> {
         if let CurrentWindow::Other(i) = self.current_window {
             self.windows.get(i)

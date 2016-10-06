@@ -1,6 +1,7 @@
 mod entryline;
 mod displayarea;
-pub mod window;
+mod window;
+mod statusbar;
 
 use std::sync::mpsc::{Sender, Receiver};
 
@@ -8,6 +9,7 @@ use ncurses::*;
 
 use self::entryline::EntryLine;
 use self::window::Windows;
+use self::statusbar::StatusBar;
 
 use event::ChatEvent;
 use irc::command::Command;
@@ -17,6 +19,7 @@ pub struct Tui {
     event_rx: Receiver<ChatEvent>,
     irc_tx: Sender<Command>,
     windows: Windows,
+    statusbar: StatusBar,
     running: bool,
 }
 
@@ -42,6 +45,7 @@ impl Tui {
             event_rx: event_rx,
             irc_tx: irc_tx,
             windows: Windows::new(),
+            statusbar: StatusBar::new(),
             running: true,
         }
     }
@@ -64,6 +68,7 @@ impl Tui {
                 }
             }
             self.windows.draw();
+            self.statusbar.draw(&self.windows);
             self.entry_line.draw();
             doupdate();
         }
