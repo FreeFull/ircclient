@@ -66,7 +66,8 @@ pub fn start(event_tx: Sender<ChatEvent>) -> Result<(ServerHandles, Sender<comma
                 MessageReceived(message) => {
                     let about_self = Some(server.current_nickname()) == message.source_nickname();
                     let is_query = match message.command {
-                        Command::PRIVMSG(ref target, _) => target == server.current_nickname(),
+                        Command::PRIVMSG(ref target, _) | Command::NOTICE(ref target, _)
+                            => target == server.current_nickname(),
                         _ => false,
                     };
                     let event = ChatEvent::new(message, about_self, is_query);

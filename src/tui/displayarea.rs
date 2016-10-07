@@ -29,6 +29,7 @@ impl DisplayArea {
         let from = event.source_nickname().unwrap_or("");
         let message = match event.message.command {
             PRIVMSG(ref target, ref msg) => format!("{} <{}> {}", target, from, msg),
+            NOTICE(ref target, ref msg) => format!("!{} <{}> {}", target, from, msg),
             JOIN(ref channel, _, _) => format!("{} has joined {}", from, channel),
             NICK(ref new_nick) => format!("{} is now known as {}", from, new_nick),
             _ => format!("{}", event.message),

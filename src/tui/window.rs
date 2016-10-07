@@ -149,7 +149,7 @@ impl Windows {
     pub fn handle_event(&mut self, event: event::ChatEvent) {
         use irc_lib::client::data::Command::*;
         match event.message.command {
-            PRIVMSG(ref target, ref _message) => {
+            PRIVMSG(ref target, ref _message) | NOTICE(ref target, ref _message) => {
                 let window_index;
                 if event.is_query {
                     let source = event.message.source_nickname().unwrap_or("Unknown nick");
