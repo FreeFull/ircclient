@@ -112,6 +112,10 @@ impl Tui {
                         }).unwrap();
                 }
             }
+            "query" => {
+                // TODO: Display error message when body is empty
+                self.windows.query(body).ok();
+            }
             "quit" => {
                 self.irc_tx.send(Command::Quit { message: maybe_body.map(String::from) }).unwrap();
                 self.running = false;

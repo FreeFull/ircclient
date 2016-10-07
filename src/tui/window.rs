@@ -199,4 +199,15 @@ impl Windows {
         self.change_to(len);
         len - 1
     }
+
+    pub fn query(&mut self, name: &str) -> Result<(), ()> {
+        let name = name.trim().split(' ').nth(0);
+        let name = match name {
+            Some(x) => x,
+            None => return Err(()),
+        };
+        let index = self.open(name, true);
+        self.change_to(index + 1);
+        Ok(())
+    }
 }
