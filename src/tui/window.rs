@@ -150,7 +150,7 @@ impl Windows {
     pub fn handle_event(&mut self, event: event::ChatEvent) {
         use irc_lib::client::data::Command::*;
         match event.message.command {
-            PRIVMSG(ref target, ref _message) | NOTICE(ref target, ref _message) => {
+            PRIVMSG(ref target, _) => {
                 let window_index;
                 if event.is_query {
                     let source = event.message.source_nickname().unwrap_or("Unknown nick");
@@ -159,6 +159,21 @@ impl Windows {
                     window_index = self.open(target, false);
                 }
                 let window = &self.windows[window_index];
+                window.show_event(&event);
+            }
+            NOTICE(ref target, _) => {
+                let name;
+                if event.is_query {
+                    name = event.message.source_nickname().unwrap_or("Unknown nick");
+                } else {
+                    name = target;
+                }
+                let window;
+                if let Some(index) = self.get_index_by_name(name) {
+                    window = &self.windows[index];
+                } else {
+                    window = &self.status;
+                }
                 window.show_event(&event);
             }
             JOIN(ref channel, _, _) => {
