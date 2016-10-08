@@ -1,6 +1,7 @@
 use super::displayarea::DisplayArea;
 
 use event;
+use irc::misc::irc_equal;
 
 #[derive(Clone)]
 pub enum WindowId {
@@ -173,8 +174,9 @@ impl Windows {
 
     fn get_index_by_name(&self, name: &str) -> Option<usize> {
         for (i, window) in self.windows.iter().enumerate() {
-            if window.id().name() == Some(name) {
-                return Some(i)
+            match window.id().name() {
+                Some(win_name) if irc_equal(win_name, name) => return Some(i),
+                _ => {}
             }
         }
         None

@@ -7,6 +7,7 @@ use irc_lib::client::prelude::*;
 use event::ChatEvent;
 
 pub mod command;
+pub mod misc;
 
 type Handle = Option<thread::JoinHandle<()>>;
 
