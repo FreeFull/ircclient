@@ -29,11 +29,27 @@ impl StatusBar {
         let cur_win_name = windows.current_window().name();
         let highest_win = windows.highest_window_index();
         let string =
-            format!("[{}: {}] Highest window: {}",
+            format!("[{}: {}] Highest window: {} ",
                    cur_win_number,
                    cur_win_name,
                    highest_win);
         waddstr(self.window, &string);
+        waddstr(self.window, "[Act:");
+        for (index, activity) in windows.activity() {
+            use super::window::ActivityLevel::*;
+            match activity {
+                Inactive => continue,
+                Active => {
+                    waddstr(self.window, &format!(" {}", index));
+                }
+                Hilight => {
+                    wcolor_set(self.window, 1);
+                    waddstr(self.window, &format!(" {}", index));
+                    wcolor_set(self.window, 0);
+                }
+            }
+        }
+        waddstr(self.window, "]");
         wnoutrefresh(self.window);
     }
 }

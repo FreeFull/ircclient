@@ -38,6 +38,7 @@ impl Tui {
         noecho();
         nonl();
         start_color();
+        init_pair(1, COLOR_RED, COLOR_BLACK);
         timeout(50);
         let entry_line = EntryLine::new();
         Tui {

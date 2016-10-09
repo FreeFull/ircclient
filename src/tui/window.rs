@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use super::displayarea::DisplayArea;
 
 use event;
@@ -37,9 +39,17 @@ impl PartialEq for WindowId {
     }
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ActivityLevel {
+    Inactive,
+    Active,
+    Hilight,
+}
+
 pub struct Window {
     display: DisplayArea,
     id: WindowId,
+    active: Cell<ActivityLevel>,
 }
 
 impl Window {
@@ -47,14 +57,17 @@ impl Window {
         Window {
             display: DisplayArea::new(),
             id: id,
+            active: Cell::new(ActivityLevel::Inactive),
         }
     }
 
     fn draw(&self) {
+        self.active.set(ActivityLevel::Inactive);
         self.display.draw();
     }
 
     fn redraw(&self) {
+        self.active.set(ActivityLevel::Inactive);
         self.display.redraw();
     }
 
@@ -71,6 +84,14 @@ impl Window {
     }
 
     pub fn show_event(&self, event: &event::ChatEvent) {
+        let active = self.active.get();
+        if active == ActivityLevel::Inactive {
+            if event.is_query {
+                self.active.set(ActivityLevel::Hilight);
+            } else {
+                self.active.set(ActivityLevel::Active);
+            }
+        }
         self.display.show_event(event);
     }
 }
@@ -226,5 +247,11 @@ impl Windows {
         let index = self.open(name, true);
         self.change_to(index + 1);
         Ok(())
+    }
+
+    pub fn activity<'a>(&'a self) -> Box<Iterator<Item = (usize, ActivityLevel)> + 'a> {
+        let iter = Some(self.status.active.get()).into_iter();
+        let iter = iter.chain(self.windows.iter().map(|w| w.active.get())).enumerate();
+        return Box::new(iter);
     }
 }
