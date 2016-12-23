@@ -1,5 +1,5 @@
 extern crate irc as irc_lib;
-extern crate ncurses;
+extern crate termion;
 extern crate chrono;
 
 use std::sync::mpsc::channel;
