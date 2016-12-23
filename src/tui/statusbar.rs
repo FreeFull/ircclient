@@ -16,7 +16,7 @@ impl StatusBar {
     pub fn new() -> StatusBar {
         let mut w = 0;
         let mut h = 0;
-        getmaxyx(stdscr, &mut h, &mut w);
+        getmaxyx(stdscr(), &mut h, &mut w);
         let window = newwin(1, w, h-2, 0);
         StatusBar {
             window: window,

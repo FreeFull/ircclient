@@ -33,7 +33,7 @@ impl Tui {
     pub fn new(event_rx: Receiver<ChatEvent>, irc_tx: Sender<Command>) -> Tui {
         setlocale(LcCategory::all, "");
         initscr();
-        keypad(stdscr, true);
+        keypad(stdscr(), true);
         raw();
         noecho();
         nonl();

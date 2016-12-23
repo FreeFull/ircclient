@@ -16,7 +16,7 @@ impl DisplayArea {
     pub fn new() -> DisplayArea {
         let mut w = 0;
         let mut h = 0;
-        getmaxyx(stdscr, &mut h, &mut w);
+        getmaxyx(stdscr(), &mut h, &mut w);
         let window = newwin(h - 2, w, 0, 0);
         scrollok(window, true);
         DisplayArea {
@@ -39,7 +39,7 @@ impl DisplayArea {
 
     pub fn add_str(&self, message: &str) {
         if (getcury(self.window), getcurx(self.window)) != (0, 0) {
-            waddch(self.window, '\n' as u64);
+            waddch(self.window, '\n' as u32);
         }
         waddstr(self.window, &message);
     }
