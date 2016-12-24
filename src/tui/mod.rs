@@ -27,8 +27,8 @@ pub struct Tui {
 
 impl Drop for Tui {
     fn drop(&mut self) {
-        use termion::cursor;
-        print!("{}", cursor::Show);
+        use termion::{cursor, clear};
+        print!("{}\r{}", cursor::Show, clear::AfterCursor);
     }
 }
 
