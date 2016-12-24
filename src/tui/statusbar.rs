@@ -1,55 +1,41 @@
-use ncurses::*;
-
 use super::window::Windows;
 
-pub struct StatusBar {
-    window: WINDOW,
-}
+use termion::{self, clear, color, cursor};
 
-impl Drop for StatusBar {
-    fn drop(&mut self) {
-        delwin(self.window);
-    }
+pub struct StatusBar {
 }
 
 impl StatusBar {
     pub fn new() -> StatusBar {
-        let mut w = 0;
-        let mut h = 0;
-        getmaxyx(stdscr(), &mut h, &mut w);
-        let window = newwin(1, w, h-2, 0);
         StatusBar {
-            window: window,
         }
     }
 
     pub fn draw(&self, windows: &Windows) {
-        werase(self.window);
+        let (_, rows) = termion::terminal_size().unwrap();
+        print!("{}{}", cursor::Hide, cursor::Goto(1, rows - 1));
+        print!("{}", clear::CurrentLine);
         let cur_win_number = windows.current_window_number();
         let cur_win_name = windows.current_window().name();
         let highest_win = windows.highest_window_index();
-        let string =
-            format!("[{}: {}] Highest window: {} ",
-                   cur_win_number,
-                   cur_win_name,
-                   highest_win);
-        waddstr(self.window, &string);
-        waddstr(self.window, "[Act:");
+        print!("[{}: {}] Highest window: {} [Act:",
+            cur_win_number,
+            cur_win_name,
+            highest_win);
         for (index, activity) in windows.activity() {
             use super::window::ActivityLevel::*;
             match activity {
                 Inactive => continue,
                 Active => {
-                    waddstr(self.window, &format!(" {}", index));
+                    print!(" {}", index);
                 }
                 Hilight => {
-                    wcolor_set(self.window, 1);
-                    waddstr(self.window, &format!(" {}", index));
-                    wcolor_set(self.window, 0);
+                    print!("{}", color::Fg(color::Red));
+                    print!(" {}", index);
+                    print!("{}", color::Fg(color::Reset));
                 }
             }
         }
-        waddstr(self.window, "]");
-        wnoutrefresh(self.window);
+        print!("]");
     }
 }

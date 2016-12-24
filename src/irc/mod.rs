@@ -4,7 +4,7 @@ use std::error::Error;
 
 use irc_lib::client::prelude::*;
 
-use event::ChatEvent;
+use event::{Event, ChatEvent, EventSender};
 
 pub mod command;
 pub mod misc;
@@ -23,7 +23,7 @@ impl Drop for ServerHandles {
     }
 }
 
-pub fn start(event_tx: Sender<ChatEvent>) -> Result<(ServerHandles, Sender<command::Command>), Box<Error>> {
+pub fn start(event_tx: EventSender) -> Result<(ServerHandles, Sender<command::Command>), Box<Error>> {
     let (irc_tx, irc_rx) = channel();
 
     let server = try!(IrcServer::new("config.json"));
@@ -71,7 +71,7 @@ pub fn start(event_tx: Sender<ChatEvent>) -> Result<(ServerHandles, Sender<comma
                             => target == server.current_nickname(),
                         _ => false,
                     };
-                    let event = ChatEvent::new(message, about_self, is_query);
+                    let event = Ok(Event::Chat(ChatEvent::new(message, about_self, is_query)));
                     event_tx.send(event).unwrap();
                 }
             }

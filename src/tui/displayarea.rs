@@ -1,26 +1,18 @@
-use ncurses::*;
-
 use event::ChatEvent;
 
-pub struct DisplayArea {
-    window: WINDOW,
-}
+use std::collections::VecDeque;
+use std::cell::RefCell;
 
-impl Drop for DisplayArea {
-    fn drop(&mut self) {
-        delwin(self.window);
-    }
+use termion::{self, cursor, clear};
+
+pub struct DisplayArea {
+    messages: Messages,
 }
 
 impl DisplayArea {
     pub fn new() -> DisplayArea {
-        let mut w = 0;
-        let mut h = 0;
-        getmaxyx(stdscr(), &mut h, &mut w);
-        let window = newwin(h - 2, w, 0, 0);
-        scrollok(window, true);
         DisplayArea {
-            window: window,
+            messages: Messages::with_max(100),
         }
     }
 
@@ -34,26 +26,60 @@ impl DisplayArea {
             NICK(ref new_nick) => format!("{} is now known as {}", from, new_nick),
             _ => format!("{}", event.message),
         };
-        self.add_str(&message);
+        self.messages.add_message(message);
     }
 
-    pub fn add_str(&self, message: &str) {
-        if (getcury(self.window), getcurx(self.window)) != (0, 0) {
-            waddch(self.window, '\n' as u32);
-        }
-        waddstr(self.window, &message);
+    pub fn add_message<S: Into<String>>(&self, message: S) {
+        let message = message.into();
+        self.messages.add_message(message.into());
     }
 
     pub fn self_message(&self, message: &str) {
-        self.add_str("<> ");
-        waddstr(self.window, message);
+        self.add_message(format!("<> {}", message));
     }
 
-    pub fn draw(&self) {
-        wnoutrefresh(self.window);
+    pub fn draw_last_message(&self) {
+        let messages = self.messages.storage.borrow();
+        if let Some(message) = messages.back() {
+            let (_, max_y) = termion::terminal_size().unwrap();
+            print!("{}{}", cursor::Goto(1, max_y - 1), clear::AfterCursor);
+            print!("{}\n\n", message);
+        }
     }
 
     pub fn redraw(&self) {
-        redrawwin(self.window);
+        let (_, max_y) = termion::terminal_size().unwrap();
+        print!("{}{}", clear::All, cursor::Goto(1, max_y));
+        self.messages.for_all(|message| print!("{}\r\n", message));
+        print!("\n");
+    }
+}
+
+struct Messages {
+    max_len: usize,
+    storage: RefCell<VecDeque<String>>,
+}
+
+impl Messages {
+    fn with_max(max_len: usize) -> Messages {
+        Messages {
+            max_len: max_len,
+            storage: RefCell::new(VecDeque::with_capacity(100)),
+        }
+    }
+
+    fn add_message(&self, message: String) {
+        let mut storage = self.storage.borrow_mut();
+        while storage.len() >= self.max_len {
+            storage.pop_front();
+        }
+        storage.push_back(message);
+    }
+
+    fn for_all<F: FnMut(&str)>(&self, mut closure: F) {
+        let storage = self.storage.borrow();
+        for message in storage.iter() {
+            closure(message);
+        }
     }
 }
