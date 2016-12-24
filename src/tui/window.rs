@@ -61,11 +61,6 @@ impl Window {
         }
     }
 
-    fn draw(&self) {
-        self.active.set(ActivityLevel::Inactive);
-        self.display.draw();
-    }
-
     fn redraw(&self) {
         self.active.set(ActivityLevel::Inactive);
         self.display.redraw();
@@ -94,9 +89,15 @@ impl Window {
         }
         self.display.show_event(event);
     }
+
+    pub fn update_display(&self) {
+        self.active.set(ActivityLevel::Inactive);
+        self.display.update_display();
+    }
 }
 
-enum CurrentWindow {
+#[derive(Copy, Clone, PartialEq)]
+enum WindowPosition {
     Status,
     Other(usize),
 }
@@ -104,7 +105,7 @@ enum CurrentWindow {
 pub struct Windows {
     status: Window,
     windows: Vec<Window>,
-    current_window: CurrentWindow,
+    current_window: WindowPosition,
 }
 
 impl Windows {
@@ -112,21 +113,25 @@ impl Windows {
         Windows {
             status: Window::new(WindowId::Status),
             windows: Vec::new(),
-            current_window: CurrentWindow::Status,
+            current_window: WindowPosition::Status,
         }
     }
 
     pub fn current_window(&self) -> &Window {
-        match self.current_window {
-            CurrentWindow::Status => &self.status,
-            CurrentWindow::Other(i) => self.windows.get(i).unwrap_or(&self.status),
+        self.window_by_position(self.current_window)
+    }
+
+    fn window_by_position(&self, position: WindowPosition) -> &Window {
+        match position {
+            WindowPosition::Status => &self.status,
+            WindowPosition::Other(i) => self.windows.get(i).unwrap_or(&self.status),
         }
     }
 
     pub fn current_window_number(&self) -> usize {
         match self.current_window {
-            CurrentWindow::Status => 0,
-            CurrentWindow::Other(i) => i + 1,
+            WindowPosition::Status => 0,
+            WindowPosition::Other(i) => i + 1,
         }
     }
 
@@ -135,19 +140,15 @@ impl Windows {
     }
 
     pub fn current_target(&self) -> Option<&Window> {
-        if let CurrentWindow::Other(i) = self.current_window {
+        if let WindowPosition::Other(i) = self.current_window {
             self.windows.get(i)
         } else {
             None
         }
     }
 
-    pub fn draw(&self) {
-        self.current_window().draw();
-    }
-
     pub fn close_current(&mut self) {
-        use self::CurrentWindow as C;
+        use self::WindowPosition as C;
         match self.current_window {
             C::Status => {}
             C::Other(i) => {
@@ -161,15 +162,16 @@ impl Windows {
 
     pub fn change_to(&mut self, i: usize) {
         if i == 0 {
-            self.current_window = CurrentWindow::Status;
+            self.current_window = WindowPosition::Status;
         } else if i <= self.windows.len() {
-            self.current_window = CurrentWindow::Other(i-1);
+            self.current_window = WindowPosition::Other(i-1);
         }
         self.current_window().redraw();
     }
 
     pub fn handle_event(&mut self, event: event::ChatEvent) {
         use irc_lib::client::data::Command::*;
+        let window_position;
         match event.message.command {
             PRIVMSG(ref target, _) => {
                 let window_index;
@@ -179,8 +181,7 @@ impl Windows {
                 } else {
                     window_index = self.open(target, false);
                 }
-                let window = &self.windows[window_index];
-                window.show_event(&event);
+                window_position = WindowPosition::Other(window_index);
             }
             NOTICE(ref target, _) => {
                 let name;
@@ -189,23 +190,23 @@ impl Windows {
                 } else {
                     name = target;
                 }
-                let window;
                 if let Some(index) = self.get_index_by_name(name) {
-                    window = &self.windows[index];
+                    window_position = WindowPosition::Other(index);
                 } else {
-                    window = &self.status;
+                    window_position = WindowPosition::Status;
                 }
-                window.show_event(&event);
             }
             JOIN(ref channel, _, _) => {
                 let window_index = self.open(channel, false);
-                let window = &self.windows[window_index];
-                window.show_event(&event);
+                window_position = WindowPosition::Other(window_index);
             }
             _ => {
-                self.status.show_event(&event);
+                window_position = WindowPosition::Status;
             }
         }
+        let window = self.window_by_position(window_position);
+        window.show_event(&event);
+        self.current_window().update_display();
     }
 
     fn get_index_by_name(&self, name: &str) -> Option<usize> {
@@ -231,7 +232,7 @@ impl Windows {
         } else {
             window = Window::new(WindowId::Channel { name: name_owned });
         }
-        window.display.add_str(name);
+        window.display.add_message(name);
         self.windows.push(window);
         let len = self.windows.len();
         self.change_to(len);

@@ -1,5 +1,17 @@
 use chrono::{DateTime, Local};
 use irc_lib::client::data::Message;
+use termion::event::Key;
+
+use std::sync::mpsc::{Sender, Receiver};
+use std::io;
+
+pub type EventSender = Sender<io::Result<Event>>;
+pub type EventReceiver = Receiver<io::Result<Event>>;
+
+pub enum Event {
+    Input(Key),
+    Chat(ChatEvent),
+}
 
 pub struct ChatEvent {
     pub about_self: bool,

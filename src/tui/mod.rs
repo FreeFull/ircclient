@@ -4,75 +4,76 @@ mod window;
 mod statusbar;
 
 use std::sync::mpsc::{Sender, Receiver};
+use std::io::{self, Write, stdout};
 
-use ncurses::*;
+use termion::raw::{IntoRawMode, RawTerminal};
 
 use self::entryline::EntryLine;
 use self::window::Windows;
 use self::statusbar::StatusBar;
 
-use event::ChatEvent;
+use event::{Event, EventReceiver};
 use irc::command::Command;
 
 pub struct Tui {
     entry_line: EntryLine,
-    event_rx: Receiver<ChatEvent>,
+    event_rx: Receiver<io::Result<Event>>,
     irc_tx: Sender<Command>,
     windows: Windows,
     statusbar: StatusBar,
+    raw_stdout: RawTerminal<io::Stdout>,
     running: bool,
 }
 
 impl Drop for Tui {
     fn drop(&mut self) {
-        endwin();
+        use termion::{cursor, clear};
+        print!("{}\r{}", cursor::Show, clear::AfterCursor);
     }
 }
 
 impl Tui {
-    pub fn new(event_rx: Receiver<ChatEvent>, irc_tx: Sender<Command>) -> Tui {
-        setlocale(LcCategory::all, "");
-        initscr();
-        keypad(stdscr(), true);
-        raw();
-        noecho();
-        nonl();
-        start_color();
-        init_pair(1, COLOR_RED, COLOR_BLACK);
-        timeout(50);
-        let entry_line = EntryLine::new();
-        Tui {
-            entry_line: entry_line,
+    pub fn new(event_rx: EventReceiver, irc_tx: Sender<Command>) -> io::Result<Tui> {
+        Ok(Tui {
+            entry_line: EntryLine::new(),
             event_rx: event_rx,
             irc_tx: irc_tx,
             windows: Windows::new(),
             statusbar: StatusBar::new(),
+            raw_stdout: stdout().into_raw_mode()?,
             running: true,
-        }
+        })
     }
 
     pub fn event_loop(&mut self) {
         'main_loop:
         loop {
-            if let Some(ch) = get_wch() {
-                if let Some(line) = self.entry_line.key_input(ch) {
-                    self.handle_line(line);
-                }
-            }
             if !self.running { break; }
-            loop {
-                use std::sync::mpsc::TryRecvError::*;
-                match self.event_rx.try_recv() {
-                    Ok(event) => self.windows.handle_event(event),
-                    Err(Empty) => break,
-                    Err(Disconnected) => break 'main_loop,
+            match self.event_rx.recv() {
+                Ok(event) => {
+                    let event = event.unwrap();
+                    match event {
+                        Event::Input(key) => {
+                            if let Some(line) = self.entry_line.key_input(key) {
+                                self.handle_line(line);
+                            }
+                        },
+                        Event::Chat(event) => {
+                            self.windows.handle_event(event);
+                            self.redraw();
+                        }
+                    }
                 }
+                Err(_) => break 'main_loop,
             }
-            self.windows.draw();
-            self.statusbar.draw(&self.windows);
-            self.entry_line.draw();
-            doupdate();
+            self.redraw();
         }
+    }
+
+    fn redraw(&mut self) {
+        self.statusbar.draw(&self.windows);
+        self.entry_line.draw();
+        self.raw_stdout.flush();
     }
 
     fn handle_line(&mut self, line: String) {
@@ -88,6 +89,7 @@ impl Tui {
         }
         if let Some(target) = self.windows.current_target() {
             target.self_message(&line);
+            target.update_display();
             let target = String::from(target.id().name().expect("tui::handle_line target not found"));
             self.irc_tx.send(Command::PrivMsg { target: target, message: line }).unwrap();
         } else {
