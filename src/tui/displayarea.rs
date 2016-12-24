@@ -21,13 +21,16 @@ impl DisplayArea {
     pub fn show_event(&self, event: &ChatEvent) {
         use irc_lib::client::data::Command::*;
         let from = event.source_nickname().unwrap_or("");
-        let message = match event.message.command {
+        let mut message = match event.message.command {
             PRIVMSG(ref target, ref msg) => format!("{} <{}> {}", target, from, msg),
             NOTICE(ref target, ref msg) => format!("!{} <{}> {}", target, from, msg),
             JOIN(ref channel, _, _) => format!("{} has joined {}", from, channel),
             NICK(ref new_nick) => format!("{} is now known as {}", from, new_nick),
             _ => format!("{}", event.message),
         };
+        while message.ends_with(&['\r', '\n'][..]) {
+            message.pop();
+        }
         self.add_message(message);
     }
 
