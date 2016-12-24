@@ -8,7 +8,7 @@ pub struct EntryLine {
 
 impl EntryLine {
     pub fn new() -> EntryLine {
-       EntryLine {
+        EntryLine {
             string: String::new(),
         }
     }
@@ -32,5 +32,18 @@ impl EntryLine {
 
     pub fn draw(&self) {
         // TODO: Handle lines longer than the screen.
+        use termion::{self, clear, cursor};
+        let (_, max_y) = termion::terminal_size().unwrap();
+        print!("{}{}", cursor::Goto(1, max_y), clear::AfterCursor);
+        for ch in self.string.chars() {
+            match ch {
+                '\u{00}' => print!("\0"),
+                '\u{01}'...'\u{1f}' => print!("^{:?}", ch),
+                '\u{7f}' => print!("^?"),
+                '\u{80}'...'\u{9f}' => print!("@{:?}", ch),
+                _ => print!("{}", ch),
+            }
+        }
+        print!("{}", cursor::Show);
     }
 }
