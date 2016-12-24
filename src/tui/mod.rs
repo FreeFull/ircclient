@@ -25,6 +25,13 @@ pub struct Tui {
     running: bool,
 }
 
+impl Drop for Tui {
+    fn drop(&mut self) {
+        use termion::cursor;
+        print!("{}", cursor::Show);
+    }
+}
+
 impl Tui {
     pub fn new(event_rx: EventReceiver, irc_tx: Sender<Command>) -> io::Result<Tui> {
         Ok(Tui {
@@ -82,6 +89,7 @@ impl Tui {
         }
         if let Some(target) = self.windows.current_target() {
             target.self_message(&line);
+            target.update_display();
             let target = String::from(target.id().name().expect("tui::handle_line target not found"));
             self.irc_tx.send(Command::PrivMsg { target: target, message: line }).unwrap();
         } else {

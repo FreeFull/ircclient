@@ -90,8 +90,9 @@ impl Window {
         self.display.show_event(event);
     }
 
-    pub fn draw_last_message(&self) {
-        self.display.draw_last_message();
+    pub fn update_display(&self) {
+        self.active.set(ActivityLevel::Inactive);
+        self.display.update_display();
     }
 }
 
@@ -205,9 +206,7 @@ impl Windows {
         }
         let window = self.window_by_position(window_position);
         window.show_event(&event);
-        if window_position == self.current_window {
-            self.current_window().draw_last_message();
-        }
+        self.current_window().update_display();
     }
 
     fn get_index_by_name(&self, name: &str) -> Option<usize> {
