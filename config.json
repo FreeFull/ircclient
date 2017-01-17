@@ -9,7 +9,7 @@
   "port": 6697,
   "use_ssl": true,
   "encoding": "UTF-8",
-  "channels": ["#rust-offtopic"],
+  "channels": [],
   "umodes": "+RB-x",
   "user_info": "I'm a test user for the Rust IRC crate.",
   "ping_time": 180,

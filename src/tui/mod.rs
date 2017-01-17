@@ -73,7 +73,7 @@ impl Tui {
     fn redraw(&mut self) {
         self.statusbar.draw(&self.windows);
         self.entry_line.draw();
-        self.raw_stdout.flush();
+        self.raw_stdout.flush().unwrap();
     }
 
     fn handle_line(&mut self, line: String) {

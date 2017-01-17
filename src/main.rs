@@ -1,6 +1,7 @@
 extern crate irc as irc_lib;
 extern crate termion;
 extern crate chrono;
+extern crate rustyline;
 
 use std::sync::mpsc::channel;
 
