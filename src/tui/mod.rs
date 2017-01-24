@@ -77,7 +77,7 @@ impl Tui {
     }
 
     fn handle_line(&mut self, line: String) {
-        if line.len() == 0 {
+        if line.is_empty() {
             return;
         }
         if line.chars().nth(0) == Some('/') {
@@ -124,7 +124,7 @@ impl Tui {
                 self.running = false;
             },
             "win" | "w" => {
-                if let Some(number) = body.parse::<usize>().ok() {
+                if let Ok(number) = body.parse::<usize>() {
                     self.windows.change_to(number);
                 }
             }

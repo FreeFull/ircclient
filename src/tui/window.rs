@@ -20,7 +20,7 @@ impl WindowId {
     pub fn name(&self) -> Option<&str> {
         use self::WindowId::*;
         match *self {
-            Channel { ref name, .. } => Some(name),
+            Channel { ref name, .. } |
             Query { ref name, .. } => Some(name),
             Status => None
         }
@@ -31,7 +31,7 @@ impl PartialEq for WindowId {
     fn eq(&self, rhs: &WindowId) -> bool {
         use self::WindowId::*;
         match (self, rhs) {
-            (&Channel { name: ref name_a, .. }, &Channel { name: ref name_b, .. }) => name_a == name_b,
+            (&Channel { name: ref name_a, .. }, &Channel { name: ref name_b, .. }) |
             (&Query { name: ref name_a, .. }, &Query { name: ref name_b, .. }) => name_a == name_b,
             (&Status, &Status) => true,
             (_, _) => false,
@@ -174,22 +174,20 @@ impl Windows {
         let window_position;
         match event.message.command {
             PRIVMSG(ref target, _) => {
-                let window_index;
-                if event.is_query {
+                let window_index = if event.is_query {
                     let source = event.message.source_nickname().unwrap_or("Unknown nick");
-                    window_index = self.open(source, true);
+                    self.open(source, true)
                 } else {
-                    window_index = self.open(target, false);
-                }
+                    self.open(target, false)
+                };
                 window_position = WindowPosition::Other(window_index);
             }
             NOTICE(ref target, _) => {
-                let name;
-                if event.is_query {
-                    name = event.message.source_nickname().unwrap_or("Unknown nick");
+                let name = if event.is_query {
+                    event.message.source_nickname().unwrap_or("Unknown nick")
                 } else {
-                    name = target;
-                }
+                    target
+                };
                 if let Some(index) = self.get_index_by_name(name) {
                     window_position = WindowPosition::Other(index);
                 } else {
@@ -226,12 +224,11 @@ impl Windows {
              return i;
         }
         let name_owned = String::from(name);
-        let window;
-        if is_query {
-            window = Window::new(WindowId::Query { name: name_owned });
+        let window = if is_query {
+            Window::new(WindowId::Query { name: name_owned })
         } else {
-            window = Window::new(WindowId::Channel { name: name_owned });
-        }
+            Window::new(WindowId::Channel { name: name_owned })
+        };
         window.display.add_message(name);
         self.windows.push(window);
         let len = self.windows.len();
@@ -253,6 +250,6 @@ impl Windows {
     pub fn activity<'a>(&'a self) -> Box<Iterator<Item = (usize, ActivityLevel)> + 'a> {
         let iter = Some(self.status.active.get()).into_iter();
         let iter = iter.chain(self.windows.iter().map(|w| w.active.get())).enumerate();
-        return Box::new(iter);
+        Box::new(iter)
     }
 }

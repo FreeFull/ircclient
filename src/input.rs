@@ -8,7 +8,7 @@ pub fn start(event_tx: EventSender) -> JoinHandle<()> {
             use termion::input::TermRead;
             for event in io::stdin().keys() {
                 let event = event.map(Event::Input);
-                if let Err(_) = event_tx.send(event) {
+                if event_tx.send(event).is_err() {
                     break;
                 }
             }
